@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="styles.css">
+    <title>Web Graphics Example</title>
+</head>
+<body>
+    <header>
+        <h1>Web Graphics Example</h1>
+    </header>
+    <main>
+        <div class="canvas-wrapper">
+            <canvas id="myCanvas2D"></canvas>
+            <canvas id="myCanvas3D" style="display: none;"></canvas>
+            <!-- dat.GUI will be appended here using JavaScript -->
+        </div>
+        <div class="canvas-utils">
+            <p id="responsiveText">Move your mouse!</p>
+
+            <button id="go3DButton">
+                <span class="icon">
+                    <object id="svgIcon" type="image/svg+xml" data="3DCanvas.svg" width="24" height="24">
+                        <!-- Fallback content for browsers that don't support SVG -->
+                        Your browser does not support SVG
+                    </object>
+                </span>
+                <span id="buttonText">Go 3D</span>
+            </button>            
+        </div>
+    </main>
+    <!-- Include your main JavaScript file here as a module -->
+    <script type="module" src="main.js"></script>
+</body>
+
+</html>
