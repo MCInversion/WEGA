@@ -3,7 +3,7 @@ Web Graphics course.
 
 ### Step 1: Set Up Node.js and npm
 
-Make sure you have Node.js and npm installed. You can download them from nodejs.org. The npm comes bundled with Node.js.
+Make sure you have Node.js and npm installed. You can download them from [nodejs.org](https://nodejs.org/en). The npm comes bundled with Node.js.
 
 ### Step 2: Initialize Your Project
 
