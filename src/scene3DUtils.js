@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 
 export const useRGBShader = true;
+export const useIcosahedron = false;
 
 const ballMaterial = new THREE.MeshPhongMaterial({ 
     color: 0xFF0000, 
@@ -10,14 +11,14 @@ const ballMaterial = new THREE.MeshPhongMaterial({
 // Create a single reusable unit sphere geometry
 const unitSphereGeometry = new THREE.SphereGeometry(1, 32, 32);
 
-export function modifyIcosahedronWithVertexBalls(icosahedron, highlightAngle, camera, canvas) {
-    const vertexBalls = icosahedron.vertexBalls;
-    const positions = icosahedron.geometry.attributes.position.array;
+export function modifyMeshWithVertexBalls(mesh, highlightAngle, camera, canvas) {
+    const vertexBalls = mesh.vertexBalls;
+    const positions = mesh.geometry.attributes.position.array;
     for (let i = 0, j = 0; i < vertexBalls.length; i++, j += 3) {
         let radius = 0.02;
         if (highlightAngle) 
         {
-            const angle = computeCanvasAngleFromWorldPosition(new THREE.Vector3(positions[j], positions[j + 1], positions[j + 2]), icosahedron, camera, canvas);
+            const angle = computeCanvasAngleFromWorldPosition(new THREE.Vector3(positions[j], positions[j + 1], positions[j + 2]), mesh, camera, canvas);
             let angleDiff = Math.abs(angle - highlightAngle);
             angleDiff = Math.min(angleDiff, 2 * Math.PI - angleDiff);
             const factor = Math.cos(angleDiff);
@@ -27,9 +28,9 @@ export function modifyIcosahedronWithVertexBalls(icosahedron, highlightAngle, ca
     }
 }
 
-function computeCanvasAngleFromWorldPosition(pos, icosahedron, camera, canvas) {
+function computeCanvasAngleFromWorldPosition(pos, mesh, camera, canvas) {
     // Convert vertex world position to screen space
-    const vertexWorldPos = pos.clone().applyMatrix4(icosahedron.matrixWorld);
+    const vertexWorldPos = pos.clone().applyMatrix4(mesh.matrixWorld);
     const vertexScreenPos = vertexWorldPos.project(camera);
 
     // The returned x and y from the project() function are in the range of [-1,1]. Convert them to fit the canvas size.
@@ -121,4 +122,15 @@ export function initFaceShaderMaterial() {
     });
 
     return material;
+}
+
+export function updateRotation(obj) {
+    if (!obj) return;
+
+    if (obj instanceof THREE.Mesh) {
+        obj.rotation.x += 0.01;
+        obj.rotation.y += 0.01;
+    } else if (obj instanceof THREE.Group || obj instanceof THREE.Object3D) {
+        obj.children.forEach(child => this.updateRotation(child));
+    }
 }

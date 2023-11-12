@@ -1,7 +1,9 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
+import { STLLoader } from 'three/examples/jsm/loaders/STLLoader.js';
+import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js';
 import { GUI } from 'dat.gui';
-import { initFaceShaderMaterial, addBarycentricCoordinates, constructVertexBalls, modifyIcosahedronWithVertexBalls, useRGBShader } from './scene3DUtils.js';
+import { initFaceShaderMaterial, addBarycentricCoordinates, constructVertexBalls, modifyMeshWithVertexBalls, useRGBShader, useIcosahedron, updateRotation } from './scene3DUtils.js';
 
 export class Scene3D {
     constructor(canvasId, guiContainerSelector) {
@@ -48,8 +50,8 @@ export class Scene3D {
             
             let angle = Math.atan2(dy, dx);
             
-            // modify icosahedron
-            modifyIcosahedronWithVertexBalls(this.icosahedron, angle, this.camera, this.canvas);
+            // modify mesh
+            modifyMeshWithVertexBalls(this.mesh, angle, this.camera, this.canvas);
     
             if (rect.width === 0 || rect.height === 0 || useRGBShader === false)
                 return;
@@ -111,9 +113,12 @@ export class Scene3D {
         const computedStyle = getComputedStyle(canvasWrapper);
         this.renderer.setClearColor(computedStyle.backgroundColor);
 
-        // Create the icosahedron geometry and mesh
-        this.icosahedron = this.constructIcosahedronWithVertexBalls(1.2, this.guiConfig.subdivLevel);
-        this.scene.add(this.icosahedron);
+        // Create the geometry and mesh
+        if (useIcosahedron) {
+            this.mesh = this.constructIcosahedronWithVertexBalls(1.2, this.guiConfig.subdivLevel);
+        } else {
+            this.mesh = this.loadMeshWithMaterials('./assets/models/bunny.obj', 'obj');
+        }
 
         // Add orbit controls
         this.controls = new OrbitControls(this.camera, this.renderer.domElement);
@@ -163,9 +168,11 @@ export class Scene3D {
 
         this.gui.add(this.guiConfig, 'subdivLevel', 0, 5).step(1).name('Subdivision Level').onChange(
             (value) => {  // Arrow function to use the correct `this`
-                this.scene.remove(this.icosahedron); // Remove the old icosahedron
-                this.icosahedron = this.constructIcosahedronWithVertexBalls(1.2, value);
-                this.scene.add(this.icosahedron);
+                if (useIcosahedron) {
+                this.scene.remove(this.mesh); // Remove the old mesh
+                this.mesh = this.constructIcosahedronWithVertexBalls(1.2, value);
+                this.scene.add(this.mesh);
+            }
         });
 
         guiContainer.appendChild(this.gui.domElement);
@@ -173,8 +180,9 @@ export class Scene3D {
 
     animate() {
         requestAnimationFrame(this.animate.bind(this));
-        this.icosahedron.rotation.x += 0.01;
-        this.icosahedron.rotation.y += 0.01;
+        
+        // Update rotation for both single mesh and groups of meshes
+        updateRotation(this.mesh);
 
         // Render the main scene to a texture
         if (useRGBShader)
@@ -198,13 +206,61 @@ export class Scene3D {
         addBarycentricCoordinates(geometry);
         const wireframeMaterial = new THREE.MeshBasicMaterial({ color: 0x326630, wireframe: true });
         const shaderMaterial = initFaceShaderMaterial();
-        this.icosahedron = new THREE.Mesh(geometry, shaderMaterial);
-        this.icosahedron.add(new THREE.Mesh(geometry, wireframeMaterial));
+        this.mesh = new THREE.Mesh(geometry, shaderMaterial);
+        this.mesh.add(new THREE.Mesh(geometry, wireframeMaterial));
 
         // Create the vertex balls
-        this.icosahedron.vertexBalls = constructVertexBalls(this.icosahedron);
-        return this.icosahedron;
+        this.mesh.vertexBalls = constructVertexBalls(this.mesh);
+        this.scene.add(this.mesh);
+        return this.mesh;
     }
 
+    loadMeshWithMaterials(filePath, fileType) {
+        // Choose the correct loader based on file type
+        let loader;
+        if (fileType === 'stl') {
+            loader = new STLLoader();
+        } else if (fileType === 'obj') {
+            loader = new OBJLoader();
+        } else {
+            console.error('Unsupported file type:', fileType);
+            return;
+        }
+
+        // Load the model
+        loader.load(filePath, (geometry) => {
+            // If the loaded object is not geometry, but a mesh or group
+            // you may need to traverse and apply materials to its children
+            if (!(geometry instanceof THREE.BufferGeometry)) {
+                geometry.traverse((child) => {
+                    if (child instanceof THREE.Mesh) {
+                        this.applyMaterialsToMesh(child);
+                    }
+                });
+            } else {
+                // Directly create a mesh from the loaded geometry
+                addBarycentricCoordinates(geometry);
+                const mesh = new THREE.Mesh(geometry);
+                this.applyMaterialsToMesh(mesh);
+                this.mesh = mesh;
+                this.scene.add(this.mesh);
+            }
+        }, undefined, (error) => {
+            console.error('An error happened', error);
+        });
+    }
+
+    applyMaterialsToMesh(mesh) {
+        // Apply wireframe material
+        const wireframeMaterial = new THREE.MeshBasicMaterial({ color: 0x326630, wireframe: true });
+        mesh.add(new THREE.Mesh(mesh.geometry, wireframeMaterial));
+
+        // Apply shader material
+        const shaderMaterial = this.initFaceShaderMaterial(); // Assuming this is a method of your class
+        mesh.material = shaderMaterial;
+
+        // Create vertex balls if needed
+        mesh.vertexBalls = this.constructVertexBalls(mesh); // Assuming this is a method of your class
+    }
 
 }
