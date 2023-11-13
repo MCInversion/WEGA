@@ -137,3 +137,19 @@ export function updateRotation(obj) {
         obj.children.forEach(child => this.updateRotation(child));
     }
 }
+
+export function fitMeshToBBox(mesh, bbox) {
+    const meshBBox = new THREE.Box3().setFromObject(mesh);
+    const maxDimension = Math.max(
+        meshBBox.max.x - meshBBox.min.x,
+        meshBBox.max.y - meshBBox.min.y,
+        meshBBox.max.z - meshBBox.min.z
+    );
+    const scale = 2 / maxDimension;
+    const displacement = new THREE.Vector3()
+            .subVectors(meshBBox.getCenter(new THREE.Vector3()), bbox.getCenter(new THREE.Vector3()))
+            .multiplyScalar(scale);
+    mesh.scale.multiplyScalar(scale);
+    mesh.position.sub(displacement);
+    return mesh;
+}

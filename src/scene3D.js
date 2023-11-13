@@ -3,7 +3,7 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { STLLoader } from 'three/examples/jsm/loaders/STLLoader.js';
 import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js';
 import { GUI } from 'dat.gui';
-import { initFaceShaderMaterial, addBarycentricCoordinates, constructVertexBalls, modifyMeshWithVertexBalls, useRGBShader, useIcosahedron, updateRotation } from './scene3DUtils.js';
+import { initFaceShaderMaterial, addBarycentricCoordinates, constructVertexBalls, modifyMeshWithVertexBalls, useRGBShader, useIcosahedron, updateRotation, fitMeshToBBox } from './scene3DUtils.js';
 import bunnyObj from '../assets/bunny.obj';
 import bunnyStl from '../assets/bunny.stl';
 
@@ -13,6 +13,9 @@ export class Scene3D {
         this.canvas = document.getElementById(canvasId);
         this.context = this.canvas.getContext('webgl2', { alpha: false });
         this.guiContainer = document.querySelector(guiContainerSelector);
+
+        this.sceneBBox = new THREE.Box3(
+            new THREE.Vector3(-1, -1, -1), new THREE.Vector3(1, 1, 1));
 
         this.initRGBShader();
         this.setupGUI(guiContainerSelector);
@@ -235,10 +238,7 @@ export class Scene3D {
     
             // Handle STL files (loadedObject is THREE.BufferGeometry)
             if (fileType === 'stl') {
-                addBarycentricCoordinates(loadedObject);
                 this.mesh = new THREE.Mesh(loadedObject);
-                this.applyMaterialsToMesh(this.mesh);
-                this.scene.add(this.mesh);
             }
             // Handle OBJ files (loadedObject is likely a THREE.Group or THREE.Object3D)
             else if (fileType === 'obj') {
@@ -247,9 +247,13 @@ export class Scene3D {
                         this.mesh = child;
                     }
                 });
-                this.applyMaterialsToMesh(this.mesh);
-                this.scene.add(this.mesh);
             }
+
+            fitMeshToBBox(this.mesh, this.sceneBBox);
+            addBarycentricCoordinates(this.mesh.geometry);
+            this.applyMaterialsToMesh(this.mesh);
+            this.scene.add(this.mesh);
+
         }, undefined, (error) => {
             console.error('Error loading file:', error);
         });
