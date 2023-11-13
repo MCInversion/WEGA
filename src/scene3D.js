@@ -117,7 +117,7 @@ export class Scene3D {
         if (useIcosahedron) {
             this.mesh = this.constructIcosahedronWithVertexBalls(1.2, this.guiConfig.subdivLevel);
         } else {
-            this.mesh = this.loadMeshWithMaterials('./assets/bunny.obj', 'obj');
+            this.mesh = this.loadMeshWithMaterials('../assets/bunny.obj', 'obj');
         }
 
         // Add orbit controls
@@ -225,6 +225,8 @@ export class Scene3D {
             console.error('Unsupported file type:', fileType);
             return;
         }
+
+        console.log("Loading OBJ file from path:", filePath);
     
         loader.load(filePath, (loadedObject) => {
             console.log('Loaded object:', loadedObject); // Debugging line
@@ -232,9 +234,8 @@ export class Scene3D {
             // Handle STL files (loadedObject is THREE.BufferGeometry)
             if (fileType === 'stl') {
                 addBarycentricCoordinates(loadedObject);
-                const mesh = new THREE.Mesh(loadedObject);
-                this.applyMaterialsToMesh(mesh);
-                this.mesh = mesh;
+                this.mesh = new THREE.Mesh(loadedObject);
+                this.applyMaterialsToMesh(this.mesh);
                 this.scene.add(this.mesh);
             }
             // Handle OBJ files (loadedObject is likely a THREE.Group or THREE.Object3D)

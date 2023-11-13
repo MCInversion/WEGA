@@ -7,6 +7,9 @@ dist/
 # Caching files
 .cache/
 
+# vs
+.vs/
+
 # Logs
 logs
 *.log
