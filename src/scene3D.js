@@ -117,7 +117,7 @@ export class Scene3D {
         if (useIcosahedron) {
             this.mesh = this.constructIcosahedronWithVertexBalls(1.2, this.guiConfig.subdivLevel);
         } else {
-            this.mesh = this.loadMeshWithMaterials('./assets/models/bunny.obj', 'obj');
+            this.mesh = this.loadMeshWithMaterials('./assets/bunny.obj', 'obj');
         }
 
         // Add orbit controls
@@ -216,7 +216,6 @@ export class Scene3D {
     }
 
     loadMeshWithMaterials(filePath, fileType) {
-        // Choose the correct loader based on file type
         let loader;
         if (fileType === 'stl') {
             loader = new STLLoader();
@@ -226,29 +225,31 @@ export class Scene3D {
             console.error('Unsupported file type:', fileType);
             return;
         }
-
-        // Load the model
-        loader.load(filePath, (geometry) => {
-            // If the loaded object is not geometry, but a mesh or group
-            // you may need to traverse and apply materials to its children
-            if (!(geometry instanceof THREE.BufferGeometry)) {
-                geometry.traverse((child) => {
-                    if (child instanceof THREE.Mesh) {
-                        this.applyMaterialsToMesh(child);
-                    }
-                });
-            } else {
-                // Directly create a mesh from the loaded geometry
-                addBarycentricCoordinates(geometry);
-                const mesh = new THREE.Mesh(geometry);
+    
+        loader.load(filePath, (loadedObject) => {
+            console.log('Loaded object:', loadedObject); // Debugging line
+    
+            // Handle STL files (loadedObject is THREE.BufferGeometry)
+            if (fileType === 'stl') {
+                addBarycentricCoordinates(loadedObject);
+                const mesh = new THREE.Mesh(loadedObject);
                 this.applyMaterialsToMesh(mesh);
                 this.mesh = mesh;
                 this.scene.add(this.mesh);
             }
+            // Handle OBJ files (loadedObject is likely a THREE.Group or THREE.Object3D)
+            else if (fileType === 'obj') {
+                loadedObject.traverse((child) => {
+                    if (child instanceof THREE.Mesh) {
+                        this.applyMaterialsToMesh(child);
+                    }
+                });
+            }
         }, undefined, (error) => {
-            console.error('An error happened', error);
+            console.error('Error loading file:', error);
         });
     }
+    
 
     applyMaterialsToMesh(mesh) {
         // Apply wireframe material

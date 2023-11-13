@@ -12,6 +12,9 @@ const ballMaterial = new THREE.MeshPhongMaterial({
 const unitSphereGeometry = new THREE.SphereGeometry(1, 32, 32);
 
 export function modifyMeshWithVertexBalls(mesh, highlightAngle, camera, canvas) {
+    if (mesh == undefined)
+        return;
+
     const vertexBalls = mesh.vertexBalls;
     const positions = mesh.geometry.attributes.position.array;
     for (let i = 0, j = 0; i < vertexBalls.length; i++, j += 3) {
