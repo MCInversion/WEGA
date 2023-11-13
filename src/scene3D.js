@@ -4,6 +4,8 @@ import { STLLoader } from 'three/examples/jsm/loaders/STLLoader.js';
 import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js';
 import { GUI } from 'dat.gui';
 import { initFaceShaderMaterial, addBarycentricCoordinates, constructVertexBalls, modifyMeshWithVertexBalls, useRGBShader, useIcosahedron, updateRotation } from './scene3DUtils.js';
+import bunnyObj from '../assets/bunny.obj';
+import bunnyStl from '../assets/bunny.stl';
 
 export class Scene3D {
     constructor(canvasId, guiContainerSelector) {
@@ -117,7 +119,7 @@ export class Scene3D {
         if (useIcosahedron) {
             this.mesh = this.constructIcosahedronWithVertexBalls(1.2, this.guiConfig.subdivLevel);
         } else {
-            this.mesh = this.loadMeshWithMaterials('../assets/bunny.obj', 'obj');
+            this.mesh = this.loadMeshWithMaterials(bunnyObj, 'obj');
         }
 
         // Add orbit controls
@@ -215,7 +217,7 @@ export class Scene3D {
         return this.mesh;
     }
 
-    loadMeshWithMaterials(filePath, fileType) {
+    loadMeshWithMaterials(filename, fileType) {
         let loader;
         if (fileType === 'stl') {
             loader = new STLLoader();
@@ -226,9 +228,9 @@ export class Scene3D {
             return;
         }
 
-        console.log("Loading OBJ file from path:", filePath);
-    
-        loader.load(filePath, (loadedObject) => {
+        //console.log("Loading OBJ file from path:", filename);
+        //loader.setPath('./assets/');
+        loader.load(filename, (loadedObject) => {
             console.log('Loaded object:', loadedObject); // Debugging line
     
             // Handle STL files (loadedObject is THREE.BufferGeometry)
@@ -242,9 +244,11 @@ export class Scene3D {
             else if (fileType === 'obj') {
                 loadedObject.traverse((child) => {
                     if (child instanceof THREE.Mesh) {
-                        this.applyMaterialsToMesh(child);
+                        this.mesh = child;
                     }
                 });
+                this.applyMaterialsToMesh(this.mesh);
+                this.scene.add(this.mesh);
             }
         }, undefined, (error) => {
             console.error('Error loading file:', error);
@@ -258,11 +262,11 @@ export class Scene3D {
         mesh.add(new THREE.Mesh(mesh.geometry, wireframeMaterial));
 
         // Apply shader material
-        const shaderMaterial = this.initFaceShaderMaterial(); // Assuming this is a method of your class
+        const shaderMaterial = initFaceShaderMaterial(); // Assuming this is a method of your class
         mesh.material = shaderMaterial;
 
         // Create vertex balls if needed
-        mesh.vertexBalls = this.constructVertexBalls(mesh); // Assuming this is a method of your class
+        mesh.vertexBalls = constructVertexBalls(mesh); // Assuming this is a method of your class
     }
 
 }
